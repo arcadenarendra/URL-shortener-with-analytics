@@ -1,0 +1,64 @@
+{
+  "name": "url-shortener",
+  "version": "1.0.0",
+  "description": "URL shortener with analytics: Redis-cached redirects, rate limiting, async click tracking and MongoDB aggregation dashboards.",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "cross-env NODE_ENV=test jest --runInBand",
+    "test:watch": "cross-env NODE_ENV=test jest --runInBand --watch",
+    "loadtest": "node scripts/loadtest.js",
+    "seed": "node scripts/seed.js"
+  },
+  "keywords": [
+    "url-shortener",
+    "express",
+    "mongodb",
+    "redis",
+    "analytics"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "geoip-lite": "^1.4.10",
+    "helmet": "^7.1.0",
+    "ioredis": "^5.4.1",
+    "js-yaml": "^4.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.6.0",
+    "morgan": "^1.10.0",
+    "nanoid": "^5.0.7",
+    "rate-limit-redis": "^4.2.0",
+    "swagger-ui-express": "^5.0.1",
+    "ua-parser-js": "^1.0.39",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "autocannon": "^8.0.0",
+    "cross-env": "^7.0.3",
+    "jest": "^29.7.0",
+    "mongodb-memory-server": "^10.0.0",
+    "supertest": "^7.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "globalSetup": "./tests/globalSetup.js",
+    "globalTeardown": "./tests/globalTeardown.js",
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup.js"
+    ],
+    "testMatch": [
+      "<rootDir>/tests/**/*.test.js"
+    ],
+    "testTimeout": 30000
+  }
+}

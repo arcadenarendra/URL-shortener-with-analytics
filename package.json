@@ -1,0 +1,32 @@
+{
+  "name": "url-shortner",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A modular URL shortener backend.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "vitest run"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "cors": "^2.8.5",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "bcryptjs": "^3.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.18.0",
+    "redis": "^5.8.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "supertest": "^7.1.4",
+    "vitest": "^5.0.5"
+  }
+}

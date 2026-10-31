@@ -15,7 +15,7 @@ async function startServer() {
   await connectToDatabase(process.env.MONGODB_URI);
 
   server = http.createServer(app);
-  server.listen(port, () => {
+  server.listen(port, "0.0.0.0", () => {
     console.log(`URL shortener API listening on port ${port}.`);
   });
 }

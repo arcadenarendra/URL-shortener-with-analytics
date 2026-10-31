@@ -1,136 +1,273 @@
-# URL Shortener
+# URL Shortener with Analytics
 
-A production-style URL shortener backend implemented as a modular monolith with Node.js, Express, MongoDB, Redis, JWT authentication, and automated tests.
+A production-style URL shortening backend built with **Node.js, Express.js, MongoDB, and Redis**. Create short links, manage URLs, track clicks, and explore link analytics through a modular backend architecture.
 
-## Features
+<p align="center">
+  <a href="https://url-shortener-with-analytics-latest.onrender.com">Live API</a> •
+  <a href="https://github.com/arcadenarendra/URL-shortener-with-analytics">GitHub Repository</a>
+</p>
 
-- Create HTTP/HTTPS short URLs.
-- Generate cryptographically secure short codes.
-- Create validated custom aliases.
-- Optional link expiration.
-- Temporary `302` redirects.
-- Optional Redis cache-aside redirect lookup.
-- User registration, login, and JWT authentication.
-- Owner-only URL listing, inspection, updates, and deletion.
-- Click counters and asynchronous click-event analytics.
-- Helmet, explicit CORS, JSON size limits, and rate limiting.
-- Docker Compose development stack.
-- GitHub Actions CI.
+---
 
-## Technology stack
+## Overview
 
-- Node.js 22+
-- Express 5
-- MongoDB with Mongoose
-- Redis with the official `redis` client
-- bcryptjs and jsonwebtoken
-- Zod validation
-- Vitest and Supertest
-- Docker and GitHub Actions
+URL Shortener with Analytics is a backend application that converts long URLs into compact, shareable links while providing URL management, authentication, and click analytics.
 
-## Architecture
+The project follows a modular monolith architecture, separating routes, controllers, services, middleware, validation, and database models.
+
+It also includes Docker containerization and an automated CI/CD pipeline that builds and publishes Docker images to GitHub Container Registry (GHCR) before triggering deployment on Render.
+
+## Key Features
+
+- **URL Shortening:** Convert long HTTP/HTTPS URLs into short links.
+- **Secure Short Codes:** Generate cryptographically secure short codes.
+- **Custom Aliases:** Create personalized short URLs.
+- **Link Expiration:** Configure optional expiration dates.
+- **URL Redirection:** Redirect users using HTTP 302 responses.
+- **Authentication:** User registration, login, and JWT-based authentication.
+- **URL Management:** View, update, and delete owned URLs.
+- **Click Analytics:** Track click counts and store click events.
+- **Redis Caching:** Optional cache-aside strategy for faster redirect lookups.
+- **Input Validation:** Validate incoming requests using Zod.
+- **Security:** Helmet, CORS configuration, password hashing, and rate limiting.
+- **Docker Support:** Containerized application with Docker Compose.
+- **Automated CI/CD:** GitHub Actions, GHCR, and Render deployment.
+
+## Live Deployment
+
+| Resource | Link |
+|---|---|
+| Live API | https://url-shortener-with-analytics-latest.onrender.com |
+| Health Check | [API Health](https://url-shortener-with-analytics-latest.onrender.com/health) |
+| GitHub Repository | [View Source Code](https://github.com/arcadenarendra/URL-shortener-with-analytics) |
+| Docker Registry | `ghcr.io/arcadenarendra/url-shortener-with-analytics` |
+
+The application is deployed as a Docker-based web service on Render. MongoDB Atlas is used as the external database.
+
+> Note: The live service may take some time to respond after inactivity depending on the Render plan.
+
+## Technology Stack
+
+| Category | Technology |
+|---|---|
+| Runtime | Node.js 22+ |
+| Backend | Express.js 5 |
+| Database | MongoDB |
+| ODM | Mongoose |
+| Cache | Redis |
+| Authentication | JWT |
+| Password Hashing | bcryptjs |
+| Validation | Zod |
+| Testing | Vitest, Supertest |
+| Containerization | Docker, Docker Compose |
+| CI/CD | GitHub Actions |
+| Container Registry | GitHub Container Registry |
+| Deployment | Render |
+
+## System Architecture
+
+The application uses a layered architecture to separate HTTP handling, business logic, and data persistence.
 
 ```mermaid
 flowchart TD
-    Client[Client] --> API[Express API]
-    API --> Middleware[Helmet / CORS / Validation / Auth / Rate Limits]
-    Middleware --> Controllers[Controllers]
-    Controllers --> Services[Business Services]
-    Services --> Mongo[(MongoDB)]
+    Client[Client / Browser] --> API[Express API]
 
-    Browser[Browser] --> Redirect[GET /:code]
-    Redirect --> Cache{Redis cache}
-    Cache -->|hit, then authoritative check| Mongo
-    Cache -->|miss or unavailable| Mongo
-    Mongo --> Response[HTTP 302 redirect]
-    Response -. asynchronous .-> Events[(Click events)]
+    API --> Middleware[Middleware Layer]
+    Middleware --> Routes[Routes]
+    Routes --> Controllers[Controllers]
+    Controllers --> Services[Services]
+
+    Services --> MongoDB[(MongoDB)]
+    Services --> Redis[(Redis Cache)]
+
+    Browser[Browser] --> Redirect[Short URL Redirect]
+    Redirect --> Cache{Redis Cache}
+
+    Cache -->|Cache Hit| MongoDB
+    Cache -->|Cache Miss| MongoDB
+
+    MongoDB --> Response[HTTP 302 Redirect]
+    Response --> Analytics[Click Event Analytics]
 ```
 
-Controllers are intentionally thin. Services contain business rules, while Mongoose models define persistence and indexes. MongoDB remains authoritative even when Redis is available.
+### Architecture Principles
 
-## Request flows
+- **Routes:** Define API endpoints and connect them to controllers.
+- **Controllers:** Handle HTTP requests and responses.
+- **Services:** Contain application business logic.
+- **Models:** Define MongoDB schemas and indexes.
+- **Middleware:** Handle authentication, validation, security, and rate limiting.
+- **Redis:** Provides optional caching for redirect lookups.
+- **MongoDB:** Remains the authoritative data store.
 
-### Create a URL
+## Project Structure
 
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant A as Express API
-    participant V as Validator
-    participant S as URL service
-    participant M as MongoDB
+```text
+URL-shortener-with-analytics/
+│
+├── .github/
+│   └── workflows/
+│       ├── ci.yml
+│       └── cd.yml
+│
+├── docs/
+│
+├── src/
+│   ├── config/
+│   ├── controllers/
+│   ├── middleware/
+│   ├── models/
+│   │   ├── clickEvent.model.js
+│   │   ├── url.model.js
+│   │   └── user.model.js
+│   ├── routes/
+│   ├── services/
+│   ├── utils/
+│   ├── validators/
+│   ├── app.js
+│   └── server.js
+│
+├── tests/
+│
+├── .dockerignore
+├── .env.example
+├── .gitignore
+├── Dockerfile
+├── docker-compose.yml
+├── docker-compose.prod.yml
+├── package.json
+├── README.md
 
-    C->>A: POST /api/v1/urls
-    A->>V: Validate destination, alias, expiry
-    V->>S: Valid request
-    S->>M: Insert with unique shortCode index
-    M-->>S: URL document
-    S-->>A: Short URL response
-    A-->>C: 201 Created
 ```
 
-### Redirect
+## API Documentation
 
-```mermaid
-sequenceDiagram
-    participant B as Browser
-    participant A as Express
-    participant R as Redis
-    participant M as MongoDB
-    participant E as Click events
+Base URL:
 
-    B->>A: GET /:code
-    A->>R: Read url:code
-    alt Valid cache entry
-        R-->>A: Destination metadata
-        A->>M: Validate active, unexpired link and increment counter
-    else Cache miss or unavailable
-        A->>M: Validate and increment counter
-        M-->>A: Destination metadata
-        A->>R: Best-effort cache write
-    end
-    A-->>B: 302 Location
-    A-)E: Best-effort asynchronous event write
+```text
+https://url-shortener-with-analytics-latest.onrender.com
 ```
 
-## API reference
+### 1. Health Check
 
-### Operational
+| Method | Endpoint | Authentication |
+|---|---|---|
+| GET | `/health` | No |
+
+Checks application and database connection status.
+
+### 2. Authentication
+
+| Method | Endpoint | Authentication |
+|---|---|---|
+| POST | `/api/v1/auth/register` | No |
+| POST | `/api/v1/auth/login` | No |
+| GET | `/api/v1/auth/me` | Bearer Token |
+
+### 3. URL Management
+
+| Method | Endpoint | Authentication |
+|---|---|---|
+| POST | `/api/v1/urls` | Optional |
+| GET | `/api/v1/urls` | Bearer Token |
+| GET | `/api/v1/urls/:code` | Owner |
+| PATCH | `/api/v1/urls/:code` | Owner |
+| DELETE | `/api/v1/urls/:code` | Owner |
+| GET | `/api/v1/urls/:code/stats` | Owner |
+
+Pagination example:
+
+```http
+GET /api/v1/urls?page=1&limit=20
+```
+
+Analytics example:
+
+```http
+GET /api/v1/urls/:code/stats?days=30&limit=20
+```
+
+### 4. URL Redirection
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/health` | Service and MongoDB connection status |
+| GET | `/:code` | Redirect to original URL |
 
-### Authentication
+Successful redirects use HTTP `302 Found`.
 
-| Method | Endpoint | Auth |
-|---|---|---|
-| `POST` | `/api/v1/auth/register` | No |
-| `POST` | `/api/v1/auth/login` | No |
-| `GET` | `/api/v1/auth/me` | Bearer JWT |
+### Authentication Header
 
-### URL management
+For protected endpoints:
 
-| Method | Endpoint | Auth |
-|---|---|---|
-| `POST` | `/api/v1/urls` | Optional |
-| `GET` | `/api/v1/urls?page=1&limit=20` | Bearer JWT |
-| `GET` | `/api/v1/urls/:code` | Bearer JWT, owner |
-| `PATCH` | `/api/v1/urls/:code` | Bearer JWT, owner |
-| `DELETE` | `/api/v1/urls/:code` | Bearer JWT, owner |
-| `GET` | `/api/v1/urls/:code/stats?days=30&limit=20` | Bearer JWT, owner |
+```http
+Authorization: Bearer YOUR_JWT_TOKEN
+```
 
-`PATCH` accepts `isActive` and/or `expiresAt`. Anonymous links can redirect, but they are not owner-managed in the current implementation.
+## Example API Requests
 
-### Redirect
+### Register a User
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/:code` | Returns a temporary `302` redirect |
+```http
+POST /api/v1/auth/register
+Content-Type: application/json
+```
 
-## Response format
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "strong-password-123"
+}
+```
 
-Successful responses use:
+### Login
+
+```http
+POST /api/v1/auth/login
+Content-Type: application/json
+```
+
+```json
+{
+  "email": "john@example.com",
+  "password": "strong-password-123"
+}
+```
+
+### Create a Short URL
+
+```http
+POST /api/v1/urls
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+```json
+{
+  "originalUrl": "https://example.com",
+  "customAlias": "my-link"
+}
+```
+
+The `customAlias` field is optional.
+
+### Update a Short URL
+
+```http
+PATCH /api/v1/urls/my-link
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+```
+
+```json
+{
+  "isActive": false
+}
+```
+
+### Response Format
+
+Successful response:
 
 ```json
 {
@@ -139,7 +276,7 @@ Successful responses use:
 }
 ```
 
-Errors use:
+Error response:
 
 ```json
 {
@@ -151,144 +288,277 @@ Errors use:
 }
 ```
 
-## Database schema and indexes
+## Database Design
+
+The application uses MongoDB with three primary collections.
 
 ### Users
 
+Stores user account information.
+
 - `name`
-- normalized, unique `email`
+- `email`
 - `passwordHash`
-- timestamps
+- `timestamps`
 
 ### URLs
 
-- unique indexed `shortCode`
+Stores shortened URL information.
+
+- `shortCode`
 - `originalUrl`
-- optional `userId`
-- optional `customAlias`
-- optional `expiresAt`
+- `userId`
+- `customAlias`
+- `expiresAt`
 - `isActive`
 - `clickCount`
-- timestamps
+- `timestamps`
 
-### Click events
+### Click Events
 
-- indexed `urlId`
-- indexed `clickedAt`
-- compound `{ urlId: 1, clickedAt: -1 }`
-- optional bounded `referrer`
-- optional bounded `userAgent`
+Stores click analytics information.
 
-`clickCount` supports fast totals. Click events support time-series and summary analytics. These writes are intentionally separate in the current modular-monolith implementation.
+- `urlId`
+- `clickedAt`
+- `referrer`
+- `userAgent`
 
-## Environment variables
+Indexes are used to support efficient URL lookups, unique short codes, and analytics queries.
 
-Copy `.env.example` to `.env` for local non-Docker development:
+## CI/CD Pipeline
 
-| Variable | Required | Description |
-|---|---:|---|
-| `NODE_ENV` | No | `development` or `production` |
-| `PORT` | No | HTTP port, default `3000` |
-| `MONGODB_URI` | Yes | MongoDB connection string |
-| `BASE_URL` | No | Base URL used in generated short URLs |
-| `SHORT_CODE_LENGTH` | No | Code length, 4–32, default `7` |
-| `MAX_CODE_GENERATION_ATTEMPTS` | No | Collision retry limit |
-| `CORS_ORIGINS` | No | Comma-separated allowed browser origins |
-| `JSON_BODY_LIMIT` | No | Express JSON limit, default `10kb` |
-| `URL_CREATION_RATE_LIMIT_WINDOW_MS` | No | Rate-limit window |
-| `URL_CREATION_RATE_LIMIT_MAX` | No | Requests per window and IP |
-| `JWT_SECRET` | Auth | Long random signing secret |
-| `JWT_EXPIRES_IN` | No | JWT lifetime, default `1h` |
-| `REDIS_URL` | No | Redis connection string; omit to disable cache |
-| `REDIS_CACHE_TTL_SECONDS` | No | Maximum cache TTL |
+The project uses GitHub Actions to automate testing, Docker image publishing, and deployment.
 
-Never commit `.env` or production credentials.
+### Deployment Architecture
 
-## Local setup
+```mermaid
+flowchart TD
+    A[Push Code to GitHub] --> B[GitHub Actions CI]
 
-For a complete local Docker walkthrough, see [README-LOCAL.md](./README-LOCAL.md).
+    B --> C[Install Dependencies]
+    C --> D[Security Audit]
+    D --> E[Run Tests]
 
-For production Docker and GitHub Actions deployment, see [README-DEPLOYMENT.md](./README-DEPLOYMENT.md).
+    E --> F[Build Docker Image]
+    F --> G[Publish Image to GHCR]
+
+    G --> H[Render Deploy Hook]
+    H --> I[Render Pulls Latest Image]
+    I --> J[Application Deployment]
+
+    J --> K[Live API]
+```
+
+### CI — Continuous Integration
+
+Triggered by pushes and pull requests.
+
+The CI workflow performs:
+
+- Repository checkout.
+- Node.js environment setup.
+- Dependency installation using `npm ci`.
+- Dependency security audit using `npm audit`.
+- JavaScript syntax validation.
+- Automated test execution.
+
+### CD — Continuous Deployment
+
+Triggered by pushes to the `main` branch.
+
+The CD workflow performs:
+
+1. Verify dependencies and run tests.
+2. Build the Docker image.
+3. Tag the image with `latest` and the commit SHA.
+4. Publish the image to GitHub Container Registry.
+5. Trigger Render deployment through a Deploy Hook.
+6. Render deploys the newly published image.
+
+### Docker Image
+
+```text
+ghcr.io/arcadenarendra/url-shortener-with-analytics:latest
+```
+
+### Required GitHub Secret
+
+| Secret | Purpose |
+|---|---|
+| `RENDER_DEPLOY_HOOK_URL` | Triggers Render deployment |
+
+GHCR publishing uses the GitHub Actions `GITHUB_TOKEN`.
+
+Production database credentials and JWT secrets are configured in Render's environment settings, not committed to the repository.
+
+## Local Development Setup
+
+### Prerequisites
+
+- Node.js 22 or later
+- npm
+- MongoDB instance
+- Git
+- Docker Desktop (optional)
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/arcadenarendra/URL-shortener-with-analytics.git
+
+cd URL-shortener-with-analytics
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Configure Environment Variables
+
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+On Windows PowerShell:
 
 ```powershell
-npm install
 Copy-Item .env.example .env
-npm test
+```
+
+Configure your MongoDB connection string and other required variables.
+
+### 4. Start the Application
+
+```bash
 npm start
 ```
 
-The application requires a reachable MongoDB instance before it starts listening.
+The API uses port `3000` by default unless another port is configured.
 
-## Docker Compose
+### 5. Run Tests
 
-Docker Compose starts the API, MongoDB, and Redis:
-
-```powershell
-$env:JWT_SECRET = "use-a-long-random-local-secret"
-docker compose up --build
-```
-
-Stop the stack:
-
-```powershell
-docker compose down
-```
-
-Remove local MongoDB data only when intentionally resetting development data:
-
-```powershell
-docker compose down -v
-```
-
-## Testing and CI
-
-Run the local test suite:
-
-```powershell
+```bash
 npm test
 ```
 
-The CI workflow in `.github/workflows/ci.yml` runs dependency installation, auditing, JavaScript syntax checks, and tests on pushes and pull requests.
+## Environment Variables
 
-## Deployment checklist
+Configure the following variables in your `.env` file or deployment platform.
 
-Before deploying:
+| Variable | Required | Description |
+|---|---|---|
+| `NODE_ENV` | No | Application environment |
+| `PORT` | No | Server port; defaults to `3000` |
+| `MONGODB_URI` | Yes | MongoDB connection string |
+| `BASE_URL` | No | Base URL used to generate short links |
+| `SHORT_CODE_LENGTH` | No | Generated short-code length |
+| `MAX_CODE_GENERATION_ATTEMPTS` | No | Collision retry limit |
+| `CORS_ORIGINS` | No | Comma-separated allowed origins |
+| `JSON_BODY_LIMIT` | No | Express JSON payload limit |
+| `JWT_SECRET` | For authentication | JWT signing secret |
+| `JWT_EXPIRES_IN` | No | JWT expiration duration |
+| `REDIS_URL` | No | Redis connection string |
+| `REDIS_CACHE_TTL_SECONDS` | No | Redis cache TTL |
+| `URL_CREATION_RATE_LIMIT_WINDOW_MS` | No | URL creation rate-limit window |
+| `URL_CREATION_RATE_LIMIT_MAX` | No | Maximum URL creation requests |
+ 
+Never commit `.env` files, database credentials, or production secrets.
 
-1. Provision MongoDB with network restrictions and authentication.
-2. Provision Redis with authentication and private networking if caching is enabled.
-3. Set a long, random `JWT_SECRET`.
-4. Set `NODE_ENV=production`.
-5. Configure `BASE_URL` and exact `CORS_ORIGINS`.
-6. Configure a TLS-terminating reverse proxy or managed load balancer.
-7. Expose only the API port; do not expose MongoDB or Redis publicly.
-8. Configure logs, uptime monitoring, and alerts for `/health`.
-9. Run database backups and test restoration.
-10. Configure secret storage through the deployment platform, not image layers or Git.
-11. Review rate limits and resource limits for expected traffic.
-12. Deploy the image built from a reviewed commit.
+## Docker Setup
 
-The Docker image runs as a non-root user. The included Compose file is intended for local development and is not a complete production orchestration configuration.
+Run the complete local development stack using Docker Compose.
 
-## Security decisions
+```bash
+docker compose up --build -d
+```
 
-- Only HTTP and HTTPS destinations are accepted.
-- User-provided URLs are not fetched automatically, avoiding SSRF in the current scope.
-- MongoDB unique indexes enforce code and email uniqueness under concurrency.
-- JWT-protected resources enforce ownership in database filters.
-- Passwords are bcrypt-hashed.
-- Helmet and explicit CORS configuration are enabled.
-- URL creation is rate-limited.
-- Production errors use generic messages for unexpected failures.
-- Redis entries are checked for active and expiration state and bounded by link expiry.
-- No IP addresses are stored in click events.
+Check running services:
 
-## Known limitations and future improvements
+```bash
+docker compose ps
+```
 
-- Anonymous links have no owner-management workflow.
-- Click-event insertion is best-effort and asynchronous; a durable queue could prevent event loss.
-- Redis is optional and currently uses a single client without clustering or distributed cache metrics.
-- Rate limiting uses the process-local default store; production deployments with multiple instances should use a shared store.
-- No background cleanup job removes old click events.
-- No password reset, email verification, refresh-token rotation, or account deletion flow exists yet.
-- API documentation generation with OpenAPI/Swagger remains a future improvement.
-- Capacity estimates and load benchmarks have not been performed, so production throughput is not claimed.
+View API logs:
+
+```bash
+docker compose logs -f api
+```
+
+Stop containers:
+
+```bash
+docker compose down
+```
+
+To remove local database volumes, use `docker compose down -v` only when intentionally resetting local development data.
+
+For detailed instructions, see [README-LOCAL.md](README-LOCAL.md).
+
+## Security Considerations
+
+Security measures implemented in the application include:
+
+- Password hashing using bcrypt.
+- JWT-based authentication.
+- Protected owner-specific URL operations.
+- Request validation using Zod.
+- HTTP security headers using Helmet.
+- Explicit CORS configuration.
+- Rate limiting for URL creation.
+- MongoDB unique indexes.
+- Production-safe error responses.
+- HTTP and HTTPS destination validation.
+- No automatic fetching of user-provided destination URLs.
+
+MongoDB remains the authoritative data store when Redis caching is enabled.
+
+## Known Limitations
+
+- Anonymous URLs do not currently have an owner-management workflow.
+- Click-event insertion is asynchronous and best-effort.
+- Redis currently uses a single client without clustering.
+- Rate limiting uses a process-local store.
+- No password reset or email verification workflow.
+- No refresh-token rotation or account deletion workflow.
+- OpenAPI/Swagger documentation is not yet integrated.
+- Formal load testing and capacity benchmarks have not been performed.
+
+## Future Improvements
+
+- Swagger/OpenAPI documentation.
+- Frontend dashboard for URL management.
+- Advanced analytics visualizations.
+- Geographic analytics where privacy-appropriate.
+- Distributed rate limiting with Redis.
+- Background cleanup for expired URLs and old click events.
+- Durable asynchronous analytics processing.
+- Password reset and email verification.
+- Automated integration and load testing.
+
+## Contributing
+
+Contributions and suggestions are welcome.
+
+1. Fork the repository.
+2. Create a feature branch.
+3. Make your changes.
+4. Run the automated tests.
+5. Submit a pull request.
+
+## Author
+
+**Narendra Prajapati**
+
+- GitHub: [@arcadenarendra](https://github.com/arcadenarendra)
+- Project: [URL Shortener with Analytics](https://github.com/arcadenarendra/URL-shortener-with-analytics)
+- Live API: [Render Deployment](https://url-shortener-with-analytics-latest.onrender.com)
+
+---
+
+<p align="center">
+  Built with Node.js, Express, MongoDB, Redis, Docker, and GitHub Actions.
+</p>
